@@ -353,7 +353,7 @@ int determinar_vencedor(Jogador *branco, Jogador *preto)
 
     printf("\n========== FIM DE JOGO ==========\n");
     printf("%s (%s) capturou %d fichas\n", branco->nome, branco->nome_posicao, pecas_branco);
-    printf("%s (%s) capturou %d fichas\n", preto->nome, preto->posicao, pecas_preto);
+    printf("%s (%s) capturou %d fichas\n", preto->nome, preto->nome_posicao, pecas_preto);
 
     if (pecas_branco > pecas_preto)
     {
