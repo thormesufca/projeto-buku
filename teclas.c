@@ -18,16 +18,12 @@ int ler_caracter()
             switch (c)
             {
             case 72:
-                printf("UP\n");
                 return 0;
             case 75:
-                printf("LEFT\n");
                 return 3;
             case 80:
-                printf("DOWN\n");
                 return 2;
             case 77:
-                printf("RIGHT\n");
                 return 1;
             default:
                 printf("Tecla invalida, use teclas direcionais ou WASD. Z para desfazer ultimo movimento\n");
