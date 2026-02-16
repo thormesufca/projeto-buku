@@ -19,7 +19,7 @@ int validar_movimento(Tabuleiro *t, int linha, int coluna, Pilha *historico);
 int desfazer_jogada(Tabuleiro *t, Pilha *mao, Pilha *historico);
 
 
-int colheita(Tabuleiro *t, Jogador **jogador, int desistencia);
+int colheita(Tabuleiro *t, Jogador *jogador, int desistencia);
 int cor_casa(int linha, int coluna);
 
 

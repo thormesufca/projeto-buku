@@ -5,23 +5,12 @@
 
 int main()
 {
-    int tamanho;
-    printf("Digite um numero para o tamanho do tabuleiro\n");
-    scanf(" %d", &tamanho);
-    Tabuleiro *tabuleiro = cria(tamanho);
+    
 
     Pilha *mao = criar();       
     Pilha *historico = criar();
 
-    // Criar jogadores
-    Jogador *branco = criar_jogador("Branco", 0);
-    Jogador *preto = criar_jogador("Preto", 1);
 
-    if (branco == NULL || preto == NULL)
-    {
-        printf("Erro ao criar jogadores!\n");
-        return 1;
-    }
 
     printf("========================================\n");
     printf("         BEM-VINDO AO JOGO BUKU        \n");
@@ -31,7 +20,30 @@ int main()
     printf("Captura: casas da sua cor com 3 ou 4 fichas\n");
     printf("Fim: todas as casas tem 0 ou 1 ficha\n");
     printf("Fim: Se um jogador selecionar uma linha vazia no seu turno, todas as fichas do tabuleiro vao para o adversario e o jogo termina\n");
-    printf("========================================\n");
+    printf("========================================\n\n");
+
+    int tamanho;
+    printf("Digite um numero para o tamanho do tabuleiro\n");
+    scanf(" %d", &tamanho);
+    Tabuleiro *tabuleiro = cria(tamanho);
+
+    // Criar jogadores
+    char nome[20];
+    printf("Digite o nome do primeiro jogador (Brancas). Ate 20 carateres:\n");
+    scanf_s("%s", nome, sizeof(nome));
+    while(getchar() != '\n');
+    Jogador *branco = criar_jogador(nome, 0);
+    
+    printf("Digite o nome do segundo jogador (Pretas). Ate 20 carateres:\n");
+    scanf_s("%s", nome, sizeof(nome));
+    while(getchar() != '\n');
+    Jogador *preto = criar_jogador(nome, 1);
+
+    if (branco == NULL || preto == NULL)
+    {
+        printf("Erro ao criar jogadores!\n");
+        return 1;
+    }
 
     int turno = 1;
     int primeiro_turno_branco = 1;

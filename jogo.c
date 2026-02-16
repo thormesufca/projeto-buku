@@ -17,6 +17,7 @@ const int directions[4][2] = {
 struct jogador
 {
     char nome[20];
+    char nome_posicao[7];
     int posicao; // 0 - Branco; 1 - Preto
     Pilha *mao;
 };
@@ -114,6 +115,14 @@ Jogador *criar_jogador(char *nome, int posicao)
     strncpy(j->nome, nome, 19);
     j->nome[19] = '\0';
     j->posicao = posicao;
+    if (posicao == 0)
+    {
+        strcpy(j->nome_posicao, "Branco");
+    }
+    else
+    {
+        strcpy(j->nome_posicao, "Preto");
+    }
     j->mao = criar();
     return j;
 }
@@ -288,27 +297,27 @@ int desfazer_jogada(Tabuleiro *t, Pilha *jogada, Pilha *historico)
     return 1;
 }
 
-int colheita(Tabuleiro *t, Jogador **jogador, int desistencia)
+int colheita(Tabuleiro *t, Jogador *jogador, int desistencia)
 {
     int total_capturado = 0;
-    int cor_jogador = (*jogador)->posicao; // 0 = branco; 1 = preto
+    int cor_jogador = jogador->posicao; // 0 = branco; 1 = preto
 
     for (int i = 0; i < linhas(t); i++)
     {
         for (int j = 0; j < colunas(t); j++)
         {
-            if ((cor_casa(i, j) == (*jogador)->posicao) || desistencia) // Colhe se a casa for do jogador ou então se houve desistência do outro jogador (coletar linha vazia)
+            if ((cor_casa(i, j) == jogador->posicao) || desistencia) // Colhe se a casa for do jogador ou então se houve desistência do outro jogador (coletar linha vazia)
             {
                 Pilha *casa;
                 if (acessar(t, i, j, &casa))
                 {
                     int qtd = tamanho(casa);
-                    if (qtd >= 3) // Se tiver mais que três fichas, pode colher a casa
+                    if (qtd >= 3 || desistencia) // Se tiver mais que três fichas ou for em razão de desistência, pode colher a casa
                     {
                         // Move todas as fichas para a mao
                         while (!vazia(casa))
                         {
-                            inserir((*jogador)->mao);
+                            inserir(jogador->mao);
                             remover(casa);
                             total_capturado++;
                         }
@@ -343,8 +352,8 @@ int determinar_vencedor(Jogador *branco, Jogador *preto)
     int pecas_preto = tamanho(preto->mao);
 
     printf("\n========== FIM DE JOGO ==========\n");
-    printf("%s capturou %d fichas\n", branco->nome, pecas_branco);
-    printf("%s capturou %d fichas\n", preto->nome, pecas_preto);
+    printf("%s (%s) capturou %d fichas\n", branco->nome, branco->nome_posicao, pecas_branco);
+    printf("%s (%s) capturou %d fichas\n", preto->nome, preto->posicao, pecas_preto);
 
     if (pecas_branco > pecas_preto)
     {
@@ -365,7 +374,7 @@ int determinar_vencedor(Jogador *branco, Jogador *preto)
 
 int desistencia(Tabuleiro *t, Jogador *recebedor)
 {
-    return colheita(t, &recebedor, 1);
+    return colheita(t, recebedor, 1);
 }
 
 // ==================== FUNCOES DE INTERFACE ====================
@@ -400,11 +409,12 @@ int ler_posicao_coleta(Tabuleiro *t, Jogador *j)
     else
     {
         set_background_color(3, bg);
-        
-        printf("Digite a %sCOLUNA%s para coletar (0-%d): ", bg,reset, colunas(t) - 1);
+
+        printf("Digite a %sCOLUNA%s para coletar (0-%d): ", bg, reset, colunas(t) - 1);
     }
     int result = scanf("%d", &pos);
-    while (getchar() != '\n');
+    while (getchar() != '\n')
+        ;
     if (result != 1)
     {
         return -1;
@@ -419,13 +429,15 @@ int ler_posicao_inicial(Tabuleiro *t, int *linha, int *coluna)
     char reset[12];
     set_background_color(8, reset);
     set_background_color(6, bg);
-    printf("%sLinha%s (0-%d): ",bg,reset, linhas(t) - 1);
+    printf("%sLinha%s (0-%d): ", bg, reset, linhas(t) - 1);
     scanf("%d", linha);
-    while (getchar() != '\n');
+    while (getchar() != '\n')
+        ;
     set_background_color(3, bg);
     printf("%sColuna%s (0-%d): ", bg, reset, colunas(t) - 1);
     scanf("%d", coluna);
-    while (getchar() != '\n');
+    while (getchar() != '\n')
+        ;
     return 1;
 }
 
@@ -438,15 +450,16 @@ int ler_posicao_inicial(Tabuleiro *t, int *linha, int *coluna)
 
 int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int primeiro_turno_branco)
 {
-    printf("\n========== TURNO DE %s ==========\n", j->nome);
-    printf("Possui %d fichas\n", tamanho(j->mao));
-
     // 1 - Adicionar 65a ficha no primeiro turno do branco
     if (primeiro_turno_branco && j->posicao == 0)
     {
         inserir(jogada);
         printf("65a ficha adicionada a jogada!\n");
     }
+    
+    printf("\n========== TURNO DE %s (%s) ==========\n", j->nome, j->nome_posicao);
+    printf("Possui %d fichas\n", tamanho(j->mao));
+
 
     // 2 - Coletar linha ou coluna
     int pos_coleta;
@@ -491,7 +504,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         }
     }
     print_tabuleiro(t, historico);
-    printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
+    printf("Jogada de %s (%s)\nFichas na jogada: %d\n", j->nome, j->nome_posicao, tamanho(jogada));
 
     // 4 - Posicao inicial para semeadura
     int linha_atual, coluna_atual;
@@ -515,7 +528,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
     semear_ficha(t, jogada, linha_atual, coluna_atual);       // Inserir no tabuleiro
     inserir_com_coords(historico, linha_atual, coluna_atual); // Inserir no histórico para desfazer se necessário
     print_tabuleiro(t, historico);
-    printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
+    printf("Jogada de %s (%s)\nFichas na jogada: %d\n", j->nome, j->nome_posicao, tamanho(jogada));
 
     // 5 - Loop de semeadura das demais fichas (andando no tabuleiro de acordo com as direções)
     while (!vazia(jogada))
@@ -527,7 +540,8 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         int nova_linha = linha_atual;
         int nova_coluna = coluna_atual;
 
-        if(direcao == 99){
+        if (direcao == 99)
+        {
             if (desfazer_jogada(t, jogada, historico))
             {
                 // Atualiza posicao atual para a ultima do historico
@@ -536,7 +550,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
                     obter_coords_topo(historico, &linha_atual, &coluna_atual);
                 }
                 print_tabuleiro(t, historico);
-                printf("Jogada de %s\nMovimento desfeito! Fichas na jogada: %d\n", j->nome, tamanho(jogada));
+                printf("Jogada de %s (%s)\nMovimento desfeito! Fichas na jogada: %d\n", j->nome, j->nome_posicao, tamanho(jogada));
             }
             else
             {
@@ -550,7 +564,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
             nova_linha = linha_atual + directions[direcao][0];
             nova_coluna = coluna_atual + directions[direcao][1];
 
-            if (!validar_movimento(t, nova_linha, nova_coluna, historico)) //Se movimento é inválido informa ao usuário e retorna para pegar novo movimento
+            if (!validar_movimento(t, nova_linha, nova_coluna, historico)) // Se movimento é inválido informa ao usuário e retorna para pegar novo movimento
             {
                 if (!posicao_valida(t, nova_linha, nova_coluna))
                 {
@@ -567,25 +581,26 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
             // Movimento válido
             linha_atual = nova_linha;
             coluna_atual = nova_coluna;
-            semear_ficha(t, jogada, linha_atual, coluna_atual); //Coloca ficha no tabuleiro
-            inserir_com_coords(historico, linha_atual, coluna_atual); //Coloca ficha no histórico
+            semear_ficha(t, jogada, linha_atual, coluna_atual);       // Coloca ficha no tabuleiro
+            inserir_com_coords(historico, linha_atual, coluna_atual); // Coloca ficha no histórico
             print_tabuleiro(t, historico);
-            printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
+            printf("Jogada de %s (%s)\nFichas na jogada: %d\n", j->nome, j->nome_posicao, tamanho(jogada));
         }
     }
 
     // 6 - Terminou o movimento, realiza captura de fichas
-    int capturadas = colheita(t, &j, 0);
+    int capturadas = colheita(t, j, 0);
     if (capturadas > 0)
     {
-        printf("\n%s capturou %d fichas!\n", j->nome, capturadas);
+        printf("\n%s (%s) capturou %d fichas!\n", j->nome, j->nome_posicao, capturadas);
     }
 
     // 7 - Limpar historico
     limpar_pilha(historico);
 
     // 8 - Verificar se chegou ao fim
-    if(jogo_terminado(t)){
+    if (jogo_terminado(t))
+    {
         return 0;
     }
 
