@@ -5,7 +5,10 @@
 
 int main()
 {
-    Tabuleiro *tabuleiro = cria(8);
+    int tamanho;
+    printf("Digite um numero para o tamanho do tabuleiro\n");
+    scanf(" %d", &tamanho);
+    Tabuleiro *tabuleiro = cria(tamanho);
 
     Pilha *mao = criar();       
     Pilha *historico = criar();
