@@ -5,6 +5,7 @@
 #include "pilha.h"
 #include "colors.h"
 #include "jogo.h"
+#include "teclas.h"
 
 const int directions[4][2] = {
     [0] = {-1, 0}, // CIMA (W)
@@ -45,8 +46,8 @@ void print_tabuleiro(Tabuleiro *matriz, Pilha *historico)
     for (int i = 0; i < linhas(matriz); i++)
     {
         set_foreground_color(2, 1, 0, fg);
-        set_background_color(3, bg);
-        printf("%s%s\t%02d ", fg, bg, i);
+        set_background_color(6, bg);
+        printf("%s%s\t%02d|", fg, bg, i);
         for (int j = 0; j < colunas(matriz); j++)
         {
             Pilha *pd;
@@ -372,9 +373,9 @@ int desistencia(Tabuleiro *t, Jogador *recebedor)
 void mostrar_menu_direcoes()
 {
     printf("Escolha uma direcao (WASD ou teclas de direcao): ");
-    printf("\n\t[W] Cima\n");
-    printf("[A] Esquerda\t\t[D] Direita\n");
-    printf("\t[S] Baixo\n");
+    printf("\n\t\t[W] Cima\n");
+    printf("[A] Esquerda\t\t\t[D] Direita\n");
+    printf("\t\t[S] Baixo\n");
     printf("[Z] Desfazer\n");
 }
 
@@ -388,25 +389,43 @@ char ler_direcao()
 int ler_posicao_coleta(Tabuleiro *t, Jogador *j)
 {
     int pos;
+    char bg[12];
+    char reset[12];
+    set_background_color(8, reset);
     if (j->posicao == 0)
     {
-        printf("Digite a LINHA para coletar (0-%d): ", linhas(t) - 1);
+        set_background_color(6, bg);
+        printf("Digite a %sLINHA%s para coletar (0-%d): ", bg, reset, linhas(t) - 1);
     }
     else
     {
-        printf("Digite a COLUNA para coletar (0-%d): ", colunas(t) - 1);
+        set_background_color(3, bg);
+        
+        printf("Digite a %sCOLUNA%s para coletar (0-%d): ", bg,reset, colunas(t) - 1);
     }
-    scanf("%d", &pos);
+    int result = scanf("%d", &pos);
+    while (getchar() != '\n');
+    if (result != 1)
+    {
+        return -1;
+    };
     return pos;
 }
 
 int ler_posicao_inicial(Tabuleiro *t, int *linha, int *coluna)
 {
-    printf("Digite a posicao inicial para distribuir:\n");
-    printf("Linha (0-%d): ", linhas(t) - 1);
+    printf("Digite a posicao inicial para semear:\n");
+    char bg[12];
+    char reset[12];
+    set_background_color(8, reset);
+    set_background_color(6, bg);
+    printf("%sLinha%s (0-%d): ",bg,reset, linhas(t) - 1);
     scanf("%d", linha);
-    printf("Coluna (0-%d): ", colunas(t) - 1);
+    while (getchar() != '\n');
+    set_background_color(3, bg);
+    printf("%sColuna%s (0-%d): ", bg, reset, colunas(t) - 1);
     scanf("%d", coluna);
+    while (getchar() != '\n');
     return 1;
 }
 
@@ -440,7 +459,9 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         {
             if (pos_coleta < 0 || pos_coleta > linhas(t) - 1)
             {
-                imprime_erro(sprintf("Posicao invalida! Digite um valor entre 0 e %d.", linhas(t) - 1));
+                char msg[64];
+                snprintf(msg, sizeof(msg), "Posicao invalida! Digite um valor entre 0 e %d.", linhas(t) - 1);
+                imprime_erro(msg);
                 continue;
             }
             if (coletar(t, pos_coleta, jogada, j) > 0)
@@ -455,7 +476,9 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         {
             if (pos_coleta < 0 || pos_coleta > colunas(t) - 1)
             {
-                imprime_erro(sprintf("Posicao invalida! Digite um valor entre 0 e %d.", colunas(t) - 1));
+                char msg[64];
+                snprintf(msg, sizeof(msg), "Posicao invalida! Digite um valor entre 0 e %d.", colunas(t) - 1);
+                imprime_erro(msg);
                 continue;
             }
             if (coletar(t, pos_coleta, jogada, j) > 0)
@@ -468,7 +491,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         }
     }
     print_tabuleiro(t, historico);
-    printf("Fichas na jogada: %d\n", tamanho(jogada));
+    printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
 
     // 4 - Posicao inicial para semeadura
     int linha_atual, coluna_atual;
@@ -492,34 +515,19 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
     semear_ficha(t, jogada, linha_atual, coluna_atual);       // Inserir no tabuleiro
     inserir_com_coords(historico, linha_atual, coluna_atual); // Inserir no histórico para desfazer se necessário
     print_tabuleiro(t, historico);
-    printf("Fichas na jogada: %d\n", tamanho(jogada));
+    printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
 
-    // 5 - Loop de distribuicao das demais fichas (andando no tabuleiro de acordo com as direções)
+    // 5 - Loop de semeadura das demais fichas (andando no tabuleiro de acordo com as direções)
     while (!vazia(jogada))
     {
 
         mostrar_menu_direcoes();
-        char direcao = ler_direcao();
+        int direcao = ler_caracter();
 
         int nova_linha = linha_atual;
         int nova_coluna = coluna_atual;
-        int dir_idx = -1;
 
-        switch (direcao)
-        {
-        case 'W':
-            dir_idx = 0;
-            break;
-        case 'D':
-            dir_idx = 1;
-            break;
-        case 'S':
-            dir_idx = 2;
-            break;
-        case 'A':
-            dir_idx = 3;
-            break;
-        case 'Z':
+        if(direcao == 99){
             if (desfazer_jogada(t, jogada, historico))
             {
                 // Atualiza posicao atual para a ultima do historico
@@ -528,22 +536,19 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
                     obter_coords_topo(historico, &linha_atual, &coluna_atual);
                 }
                 print_tabuleiro(t, historico);
-                printf("Movimento desfeito! Fichas na jogada: %d\n", tamanho(jogada));
+                printf("Jogada de %s\nMovimento desfeito! Fichas na jogada: %d\n", j->nome, tamanho(jogada));
             }
             else
             {
                 imprime_erro("Nao ha movimento para desfazer!");
             }
             continue;
-        default:
-            imprime_erro("Tecla invalida!");
-            continue;
         }
 
-        if (dir_idx >= 0)
+        if (direcao >= 0)
         {
-            nova_linha = linha_atual + directions[dir_idx][0];
-            nova_coluna = coluna_atual + directions[dir_idx][1];
+            nova_linha = linha_atual + directions[direcao][0];
+            nova_coluna = coluna_atual + directions[direcao][1];
 
             if (!validar_movimento(t, nova_linha, nova_coluna, historico)) //Se movimento é inválido informa ao usuário e retorna para pegar novo movimento
             {
@@ -555,6 +560,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
                 {
                     imprime_erro("Casa ja visitada neste turno!");
                 }
+                print_tabuleiro(t, historico);
                 continue;
             }
 
@@ -564,7 +570,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
             semear_ficha(t, jogada, linha_atual, coluna_atual); //Coloca ficha no tabuleiro
             inserir_com_coords(historico, linha_atual, coluna_atual); //Coloca ficha no histórico
             print_tabuleiro(t, historico);
-            printf("Fichas na jogada: %d\n", tamanho(jogada));
+            printf("Jogada de %s\nFichas na jogada: %d\n", j->nome, tamanho(jogada));
         }
     }
 
