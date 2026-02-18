@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "matriz.h"
 #include "pilha.h"
 #include "colors.h"
@@ -21,6 +22,9 @@ struct jogador
     int posicao; // 0 - Branco; 1 - Preto
     Pilha *mao;
 };
+
+int casa_visitada(Pilha *historico, int linha, int coluna);
+
 
 void print_tabuleiro(Tabuleiro *matriz, Pilha *historico)
 {
@@ -184,17 +188,7 @@ void limpar_pilha(Pilha *p)
     }
 }
 
-int coletar(Tabuleiro *t, int posicao, Pilha *jogada, Jogador *jogador)
-{
-    if (jogador->posicao == 0)
-    { // branco, joga em linhas
-        return coletar_linha(t, posicao, jogada);
-    }
-    else
-    { // preto, joga em colunas
-        return coletar_coluna(t, posicao, jogada);
-    }
-}
+
 
 int coletar_linha(Tabuleiro *t, int linha, Pilha *jogada)
 {
@@ -242,6 +236,18 @@ int coletar_coluna(Tabuleiro *t, int coluna, Pilha *jogada)
         }
     }
     return total;
+}
+
+int coletar(Tabuleiro *t, int posicao, Pilha *jogada, Jogador *jogador)
+{
+    if (jogador->posicao == 0)
+    { // branco, joga em linhas
+        return coletar_linha(t, posicao, jogada);
+    }
+    else
+    { // preto, joga em colunas
+        return coletar_coluna(t, posicao, jogada);
+    }
 }
 
 int semear_ficha(Tabuleiro *t, Pilha *jogada, int linha, int coluna)
@@ -454,9 +460,10 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
     if (primeiro_turno_branco && j->posicao == 0)
     {
         inserir(jogada);
-        printf("65a ficha adicionada a jogada!\n");
+        int tam = linhas(t) * colunas(t) + 1;
+        printf("%da ficha adicionada a jogada!\n", tam);
     }
-    
+
     printf("\n========== TURNO DE %s (%s) ==========\n", j->nome, j->nome_posicao);
     printf("Possui %d fichas\n", tamanho(j->mao));
 
@@ -592,7 +599,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
     int capturadas = colheita(t, j, 0);
     if (capturadas > 0)
     {
-        printf("\n%s (%s) capturou %d fichas!\n", j->nome, j->nome_posicao, capturadas);
+        printf("\n%s (%s) capturou %d fichas! Agora tem %d fichas\n", j->nome, j->nome_posicao, capturadas, tamanho(j->mao));
     }
 
     // 7 - Limpar historico
