@@ -1,13 +1,21 @@
 #include <stdio.h>
+#include <windows.h>
 #include "matriz.h"
 #include "pilha.h"
 #include "jogo.h"
 
 int main()
 {
-    
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    if (hOut != INVALID_HANDLE_VALUE) {
+        DWORD dwMode = 0;
+        if (GetConsoleMode(hOut, &dwMode)) {
+            dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+            SetConsoleMode(hOut, dwMode);
+        }
+    }
 
-    Pilha *mao = criar();       
+    Pilha *mao = criar();
     Pilha *historico = criar();
 
 
@@ -33,7 +41,7 @@ int main()
     scanf_s("%s", nome, sizeof(nome));
     while(getchar() != '\n');
     Jogador *branco = criar_jogador(nome, 0);
-    
+
     printf("Digite o nome do segundo jogador (Pretas). Ate 20 carateres:\n");
     scanf_s("%s", nome, sizeof(nome));
     while(getchar() != '\n');

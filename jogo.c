@@ -96,19 +96,37 @@ void imprime_repeated_char(char letra, int vezes)
     }
 }
 
+void imprime_mensagem(char *message, int cor_frente, int cor_fundo){
+    char bg[12];
+    set_background_color(cor_fundo, bg);
+    char fg[12];
+    set_foreground_color(cor_frente, 0, 0, fg);
+    char reset[12];
+    set_background_color(8, reset);
+    printf("%s%s", fg, bg);
+    imprime_repeated_char(' ', strlen(message) + 2);
+    printf("%s\n", reset);
+    printf("%s%s %s %s\n", fg, bg, message, reset);
+    printf("%s%s", fg, bg);
+    imprime_repeated_char(' ', strlen(message) + 2);
+    printf("%s\n", reset);
+}
+
 void imprime_erro(char *message)
 {
-    char bg[12];
-    set_background_color(4, bg);
-    char fg[12];
-    set_foreground_color(5, 0, 0, fg);
-    printf("%s%s", bg, fg);
-    imprime_repeated_char(' ', strlen(message) + 2);
-    printf("\n");
-    printf(" %s \n", message);
-    imprime_repeated_char(' ', strlen(message) + 2);
-    set_background_color(9, bg);
-    printf("\n%s", bg);
+    imprime_mensagem(message, 5, 4);
+}
+
+void imprime_info(char *message){
+    imprime_mensagem(message, 2, 3);
+}
+
+void imprime_warning(char *message){
+    imprime_mensagem(message, 1, 5);
+}
+
+void imprime_success(char *message){
+    imprime_mensagem(message, 1, 6);
 }
 
 Jogador *criar_jogador(char *nome, int posicao)
@@ -156,19 +174,18 @@ int casa_visitada(Pilha *historico, int linha, int coluna)
     int encontrou = 0;
     int l, c;
 
-    // Retira os elementos da pilha para verificar as coordenadas
     while (!vazia(historico))
     {
         obter_coords_topo(historico, &l, &c);
+        inserir_com_coords(temp, l, c);
+        remover(historico);
         if (l == linha && c == coluna)
         {
             encontrou = 1;
+            break;
         }
-        inserir_com_coords(temp, l, c);
-        remover(historico);
     }
 
-    // Devolve os elementos para a pilha original. Remoção e reinserção em pilha mantém a ordem original.
     while (!vazia(temp))
     {
         obter_coords_topo(temp, &l, &c);
@@ -273,14 +290,6 @@ int validar_movimento(Tabuleiro *t, int linha, int coluna, Pilha *historico)
     return 1;
 }
 
-/**
- * @brief Desfaz o último movimento registrado no histórico e devolve para a pilha de jogadas
- *
- * @param t Tabuleiro
- * @param jogada Pilha da jogada atual
- * @param historico Pilha com histórico das jogadas
- * @return int 1 => conseguiu desfazer; 0 => Não foi possível desfazer (pilha da jogada, casa ou histórico vazios)
- */
 int desfazer_jogada(Tabuleiro *t, Pilha *jogada, Pilha *historico)
 {
     if (vazia(historico))
@@ -356,6 +365,7 @@ int determinar_vencedor(Jogador *branco, Jogador *preto)
 {
     int pecas_branco = tamanho(branco->mao);
     int pecas_preto = tamanho(preto->mao);
+    char msg[255];
 
     printf("\n========== FIM DE JOGO ==========\n");
     printf("%s (%s) capturou %d fichas\n", branco->nome, branco->nome_posicao, pecas_branco);
@@ -363,18 +373,20 @@ int determinar_vencedor(Jogador *branco, Jogador *preto)
 
     if (pecas_branco > pecas_preto)
     {
-        printf("\nVencedor: %s!\n", branco->nome);
-        return 0;
+        snprintf(msg, sizeof(msg), "Vencedor: %s!", branco->nome);
+        imprime_success(msg);
+        return 1;
     }
     else if (pecas_preto > pecas_branco)
     {
-        printf("\nVencedor: %s!\n", preto->nome);
+        snprintf(msg, sizeof(msg), "Vencedor: %s!", preto->nome);
+        imprime_success(msg);
         return 1;
     }
     else
     {
-        printf("\nEmpate!\n");
-        return -1;
+        imprime_warning("Empate!");
+        return 0;
     }
 }
 
@@ -382,8 +394,6 @@ int desistencia(Tabuleiro *t, Jogador *recebedor)
 {
     return colheita(t, recebedor, 1);
 }
-
-// ==================== FUNCOES DE INTERFACE ====================
 
 void mostrar_menu_direcoes()
 {
@@ -447,21 +457,16 @@ int ler_posicao_inicial(Tabuleiro *t, int *linha, int *coluna)
     return 1;
 }
 
-/**
- * Loop Principal
- * @return 0 => Jogo terminou
- * @return 1 => Próxima jogada
- * @return 2 => Jogador Desistiu (entregar fichas para adversário)
- */
-
 int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int primeiro_turno_branco)
 {
     // 1 - Adicionar 65a ficha no primeiro turno do branco
+    char msg[255];
     if (primeiro_turno_branco && j->posicao == 0)
     {
         inserir(jogada);
         int tam = linhas(t) * colunas(t) + 1;
-        printf("%da ficha adicionada a jogada!\n", tam);
+        snprintf(msg, sizeof(msg), "%da ficha adicionada a jogada!", tam);
+        imprime_info(msg);
     }
 
     printf("\n========== TURNO DE %s (%s) ==========\n", j->nome, j->nome_posicao);
@@ -479,7 +484,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         {
             if (pos_coleta < 0 || pos_coleta > linhas(t) - 1)
             {
-                char msg[64];
+
                 snprintf(msg, sizeof(msg), "Posicao invalida! Digite um valor entre 0 e %d.", linhas(t) - 1);
                 imprime_erro(msg);
                 continue;
@@ -496,7 +501,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
         {
             if (pos_coleta < 0 || pos_coleta > colunas(t) - 1)
             {
-                char msg[64];
+
                 snprintf(msg, sizeof(msg), "Posicao invalida! Digite um valor entre 0 e %d.", colunas(t) - 1);
                 imprime_erro(msg);
                 continue;
@@ -561,7 +566,7 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
             }
             else
             {
-                imprime_erro("Nao ha movimento para desfazer!");
+                imprime_warning("Nao ha movimento para desfazer!");
             }
             continue;
         }
@@ -599,7 +604,8 @@ int turno_jogador(Tabuleiro *t, Jogador *j, Pilha *jogada, Pilha *historico, int
     int capturadas = colheita(t, j, 0);
     if (capturadas > 0)
     {
-        printf("\n%s (%s) capturou %d fichas! Agora tem %d fichas\n", j->nome, j->nome_posicao, capturadas, tamanho(j->mao));
+        snprintf(msg, sizeof(msg), "%s (%s) capturou %d fichas! Agora tem %d fichas", j->nome, j->nome_posicao, capturadas, tamanho(j->mao));
+        imprime_info(msg);
     }
 
     // 7 - Limpar historico
